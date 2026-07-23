@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>אפליקצפרי - הורדת אפליקציות מהירה</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
@@ -69,7 +70,7 @@
         <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-3">
                 <div class="w-12 h-12 bg-gradient-to-br from-warm-accent to-amber-600 rounded-2xl flex items-center justify-center text-white shadow-md text-2xl font-bold">
-                    <i class="fa-solid fa-cube"></i>
+                    <i class="fa-brands fa-android"></i>
                 </div>
                 <div>
                     <h1 class="text-2xl font-black tracking-tight text-warm-dark">אפליקצפרי</h1>
@@ -94,14 +95,14 @@
             <div class="absolute -right-10 -top-10 w-40 h-40 bg-warm-accent/10 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
             
             <div class="relative z-10 max-w-2xl mx-auto flex flex-col items-center gap-4">
-                <span class="bg-cream-300 text-warm-dark text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                    <i class="fa-solid fa-bolt text-amber-600 ml-1"></i> מהיר ובטוח
+                <span class="bg-cream-300 text-warm-dark text-xs font-bold px-3.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-brands fa-android text-emerald-600 text-sm"></i> חנות קבצי APK
                 </span>
                 <h2 class="text-3xl sm:text-4xl font-extrabold text-warm-dark leading-tight">
                     הורדות APK בקלות ובמהירות הבזק
                 </h2>
                 <p class="text-sm sm:text-base text-warm-muted">
-                    כל האפליקציות שלך במקום אחד. חפש, בחר והורד ישירות ללא מאמץ. השם נקבע אוטומטית משם הקובץ.
+                    כל האפליקציות שלך במקום אחד. לחץ להורדה ישירה.
                 </p>
 
                 <div class="w-full mt-4 relative">
@@ -110,6 +111,11 @@
                     </span>
                     <input type="text" id="searchInput" oninput="filterApps()" placeholder="חיפוש מהיר של אפליקציה לפי שם..." 
                         class="w-full pr-12 pl-4 py-4 rounded-2xl bg-white border border-cream-400 text-warm-dark placeholder-warm-muted/70 shadow-inner focus:outline-none focus:ring-2 focus:ring-warm-accent text-sm sm:text-base transition-all">
+                </div>
+
+                <div class="mt-2 text-xs text-warm-muted bg-white/60 px-4 py-2 rounded-xl border border-cream-300 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-warm-accent"></i>
+                    <span>האתר חולץ אוטומטית את הסמל והאייקון המקורי ישירות מתוך קובץ ה-APK!</span>
                 </div>
             </div>
         </section>
@@ -165,6 +171,59 @@
             loadAppsAuto();
         };
 
+        async function extractApkIcon(apkUrl) {
+            try {
+                const response = await fetch(apkUrl);
+                if (!response.ok) return null;
+                const arrayBuffer = await response.arrayBuffer();
+                const zip = await JSZip.loadAsync(arrayBuffer);
+                
+                let candidates = [];
+                zip.forEach((relativePath, zipEntry) => {
+                    if (!zipEntry.dir && /\.(png|webp)$/i.test(relativePath)) {
+                        const name = relativePath.toLowerCase();
+                        if (name.includes('ic_launcher') || name.includes('app_icon') || name.includes('icon')) {
+                            candidates.push(zipEntry);
+                        }
+                    }
+                });
+
+                if (candidates.length === 0) {
+                    zip.forEach((relativePath, zipEntry) => {
+                        const name = relativePath.toLowerCase();
+                        if (!zipEntry.dir && /\.(png|webp)$/i.test(relativePath) && (name.includes('mipmap') || name.includes('drawable'))) {
+                            candidates.push(zipEntry);
+                        }
+                    });
+                }
+
+                if (candidates.length === 0) return null;
+
+                const densityPriority = ['xxxhdpi', 'xxhdpi', 'xhdpi', 'hdpi', 'mdpi', 'ldpi'];
+                candidates.sort((a, b) => {
+                    let pA = densityPriority.findIndex(d => a.name.toLowerCase().includes(d));
+                    let pB = densityPriority.findIndex(d => b.name.toLowerCase().includes(d));
+                    if (pA === -1) pA = 99;
+                    if (pB === -1) pB = 99;
+                    return pA - pB;
+                });
+
+                const iconBlob = await candidates[0].async('blob');
+                return URL.createObjectURL(iconBlob);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function loadIconForCard(apkUrl, containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const iconUrl = await extractApkIcon(apkUrl);
+            if (iconUrl) {
+                container.innerHTML = `<img src="${iconUrl}" alt="אייקון" class="w-full h-full object-cover rounded-2xl">`;
+            }
+        }
+
         async function loadAppsAuto() {
             const statusText = document.getElementById('detectedRepoText');
             const loadingState = document.getElementById('loadingState');
@@ -214,15 +273,13 @@
                 allApps = apkFiles.map(file => {
                     let cleanName = file.name.substring(0, file.name.length - 4);
                     cleanName = cleanName.replace(/[-_]/g, ' ');
-                    
                     let sizeMB = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
-                    
+
                     return {
                         name: cleanName,
                         fileName: file.name,
                         size: sizeMB,
-                        download_url: file.download_url,
-                        html_url: file.html_url
+                        download_url: file.download_url
                     };
                 });
 
@@ -274,28 +331,33 @@
             apps.forEach((app, index) => {
                 const colors = [
                     'from-amber-500 to-amber-700',
-                    'from-stone-600 to-stone-800',
+                    'from-emerald-600 to-teal-800',
                     'from-warm-accent to-amber-600',
-                    'from-amber-700 to-stone-800',
+                    'from-stone-600 to-stone-800',
                     'from-yellow-600 to-amber-700'
                 ];
                 const colorClass = colors[index % colors.length];
-                const firstLetter = app.name.charAt(0) || 'A';
+                const iconContainerId = `apk-icon-box-${index}`;
 
                 const card = document.createElement('div');
                 card.className = 'glass-card rounded-3xl p-5 flex flex-col justify-between custom-shadow transition-all duration-300 hover:-translate-y-1 hover:shadow-xl border border-cream-300 group';
                 
                 card.innerHTML = `
                     <div class="flex items-start gap-4">
-                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br ${colorClass} text-white flex items-center justify-center text-2xl font-bold shadow-md shrink-0 group-hover:scale-105 transition-transform duration-300">
-                            ${firstLetter}
+                        <div id="${iconContainerId}" class="w-16 h-16 rounded-2xl bg-gradient-to-br ${colorClass} text-white flex items-center justify-center shadow-md shrink-0 group-hover:scale-105 transition-transform duration-300 overflow-hidden relative border border-white/20">
+                            <i class="fa-brands fa-android text-3xl animate-pulse"></i>
                         </div>
                         <div class="flex flex-col flex-grow min-w-0">
                             <h4 class="font-bold text-warm-dark text-base truncate" title="${app.name}">${app.name}</h4>
                             <p class="text-xs text-warm-muted mt-0.5 truncate">${app.fileName || 'app.apk'}</p>
-                            <span class="inline-block mt-2 bg-cream-200 text-warm-dark text-[11px] px-2.5 py-0.5 rounded-full font-medium w-fit">
-                                <i class="fa-solid fa-file-arrow-down text-warm-accent ml-1"></i> ${app.size}
-                            </span>
+                            <div class="flex items-center gap-1.5 mt-2 flex-wrap">
+                                <span class="inline-block bg-cream-200 text-warm-dark text-[11px] px-2.5 py-0.5 rounded-full font-medium w-fit">
+                                    <i class="fa-solid fa-file-arrow-down text-warm-accent ml-1"></i> ${app.size}
+                                </span>
+                                <span class="inline-block bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                    <i class="fa-brands fa-android ml-0.5"></i> APK
+                                </span>
+                            </div>
                         </div>
                     </div>
 
@@ -309,6 +371,8 @@
                     </div>
                 `;
                 grid.appendChild(card);
+
+                loadIconForCard(app.download_url, iconContainerId);
             });
         }
 
@@ -319,8 +383,8 @@
         }
 
         function copyAppLink(url, appName) {
-            if (url === '#') {
-                showToast("זהו קובץ הדגמה - אין קישור הורדה זמין");
+            if (!url || url === '#') {
+                showToast("אין קישור הורדה זמין");
                 return;
             }
             const textarea = document.createElement('textarea');
