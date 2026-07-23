@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>אפליקצפרי - הורדת אפליקציות מהירה</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cream: {
+                            50: '#FFFEFB',
+                            100: '#FDFBF7',
+                            200: '#F7F2E8',
+                            300: '#EFE7D8',
+                            400: '#E2D5BE',
+                            500: '#D1BE9C',
+                            600: '#B8A37E',
+                        },
+                        warm: {
+                            dark: '#3D3832',
+                            muted: '#7A7265',
+                            accent: '#C28E38',
+                            accentHover: '#A6772D',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Heebo', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #FDFBF7;
+            color: #3D3832;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 213, 190, 0.5);
+        }
+        .custom-shadow {
+            box-shadow: 0 10px 30px -5px rgba(184, 163, 126, 0.15);
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F7F2E8;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #D1BE9C;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #B8A37E;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-amber-200 selection:text-amber-900">
+
+    <header class="w-full bg-cream-200/80 border-b border-cream-300 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-gradient-to-br from-warm-accent to-amber-600 rounded-2xl flex items-center justify-center text-white shadow-md text-2xl font-bold">
+                    <i class="fa-solid fa-cube"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black tracking-tight text-warm-dark">אפליקצפרי</h1>
+                    <p class="text-xs text-warm-muted">הורדת אפליקציות APK ישירה ובטוחה</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 bg-white/80 px-3.5 py-2 rounded-2xl border border-cream-300 custom-shadow text-xs text-warm-muted">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span id="detectedRepoText"><i class="fa-brands fa-github ml-1"></i>מזהה תיקייה אוטומטית...</span>
+                <button onclick="loadAppsAuto()" title="רענן קבצים" class="mr-1 text-warm-accent hover:text-warm-dark font-bold transition-colors">
+                    <i class="fa-solid fa-rotate-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-6xl w-full mx-auto px-4 py-8 flex flex-col gap-8">
+        
+        <section class="glass-card rounded-3xl p-6 sm:p-10 text-center relative overflow-hidden custom-shadow border border-cream-300">
+            <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-amber-100 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
+            <div class="absolute -right-10 -top-10 w-40 h-40 bg-warm-accent/10 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
+            
+            <div class="relative z-10 max-w-2xl mx-auto flex flex-col items-center gap-4">
+                <span class="bg-cream-300 text-warm-dark text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                    <i class="fa-solid fa-bolt text-amber-600 ml-1"></i> מהיר ובטוח
+                </span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-warm-dark leading-tight">
+                    הורדות APK בקלות ובמהירות הבזק
+                </h2>
+                <p class="text-sm sm:text-base text-warm-muted">
+                    כל האפליקציות שלך במקום אחד. חפש, בחר והורד ישירות ללא מאמץ. השם נקבע אוטומטית משם הקובץ.
+                </p>
+
+                <div class="w-full mt-4 relative">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-warm-muted text-lg">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input type="text" id="searchInput" oninput="filterApps()" placeholder="חיפוש מהיר של אפליקציה לפי שם..." 
+                        class="w-full pr-12 pl-4 py-4 rounded-2xl bg-white border border-cream-400 text-warm-dark placeholder-warm-muted/70 shadow-inner focus:outline-none focus:ring-2 focus:ring-warm-accent text-sm sm:text-base transition-all">
+                </div>
+            </div>
+        </section>
+
+        <section class="flex flex-col gap-4">
+            <div class="flex items-center justify-between px-2">
+                <h3 class="text-lg font-bold text-warm-dark flex items-center gap-2">
+                    <i class="fa-solid fa-boxes-stacked text-warm-accent"></i> אפליקציות זמינות
+                </h3>
+                <span id="appCountBadge" class="text-xs bg-cream-300 text-warm-dark px-3 py-1 rounded-full font-bold">
+                    0 אפליקציות
+                </span>
+            </div>
+
+            <div id="loadingState" class="hidden flex flex-col items-center justify-center py-20 gap-3">
+                <div class="w-12 h-12 border-4 border-warm-accent border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-sm text-warm-muted font-medium">סורק ומאתר קבצי APK בתיקיה...</p>
+            </div>
+
+            <div id="errorState" class="hidden glass-card rounded-2xl p-8 text-center border-amber-200">
+                <div class="text-4xl text-amber-600 mb-3"><i class="fa-solid fa-folder-open"></i></div>
+                <h4 class="font-bold text-warm-dark text-base mb-1">לא נמצאו קבצי APK בתיקייה</h4>
+                <p id="errorMessage" class="text-xs text-warm-muted mb-4">אנא ודא שהעלת קבצי APK לתיקייה הראשית ב-GitHub Pages.</p>
+            </div>
+
+            <div id="appsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            </div>
+
+            <div id="emptyState" class="hidden glass-card rounded-2xl p-12 text-center">
+                <div class="text-3xl text-warm-muted mb-2"><i class="fa-solid fa-face-frown"></i></div>
+                <p class="text-sm text-warm-muted">לא נמצאו אפליקציות התואמות לחיפוש שלך.</p>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="w-full bg-cream-200/60 border-t border-cream-300 py-6 mt-12 text-center text-xs text-warm-muted">
+        <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p>© כל הזכויות שמורות - אפליקצפרי</p>
+            <p class="flex items-center gap-1">מעוצב באהבה בגווני שמנת <i class="fa-solid fa-heart text-amber-600"></i></p>
+        </div>
+    </footer>
+
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-warm-dark text-white px-5 py-3 rounded-2xl shadow-xl text-xs font-medium opacity-0 pointer-events-none transition-all duration-300 z-50 flex items-center gap-2">
+        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastMessage">הפעולה בוצעה בהצלחה</span>
+    </div>
+
+    <script>
+        let allApps = [];
+
+        window.onload = function() {
+            loadAppsAuto();
+        };
+
+        async function loadAppsAuto() {
+            const statusText = document.getElementById('detectedRepoText');
+            const loadingState = document.getElementById('loadingState');
+            const errorState = document.getElementById('errorState');
+            const appsGrid = document.getElementById('appsGrid');
+
+            loadingState.classList.remove('hidden');
+            errorState.classList.add('hidden');
+            appsGrid.innerHTML = '';
+
+            let owner = '';
+            let repo = '';
+
+            const hostname = window.location.hostname;
+            const pathSegments = window.location.pathname.split('/').filter(p => p.length > 0);
+
+            if (hostname.endsWith('.github.io')) {
+                owner = hostname.split('.')[0];
+                repo = pathSegments[0] || '';
+            }
+
+            if (owner && repo) {
+                statusText.innerHTML = `<i class="fa-brands fa-github ml-1"></i> ${owner}/${repo}`;
+                await fetchGithubApks(owner, repo);
+            } else {
+                statusText.innerHTML = `<i class="fa-solid fa-desktop ml-1"></i> ממתין להרצה ב-GitHub`;
+                loadingState.classList.add('hidden');
+                errorState.classList.remove('hidden');
+                document.getElementById('errorMessage').innerText = "העלה את הקובץ HTML וקבצי ה-APK ל-GitHub Pages כדי לראות את האפליקציות שלך כאן.";
+            }
+        }
+
+        async function fetchGithubApks(owner, repo) {
+            const loadingState = document.getElementById('loadingState');
+            const errorState = document.getElementById('errorState');
+            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents`;
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error('לא ניתן לקרוא את קבצי התיקיה מ-GitHub API');
+                }
+                const data = await response.json();
+                
+                const apkFiles = data.filter(item => item.type === 'file' && item.name.toLowerCase().endsWith('.apk'));
+                
+                allApps = apkFiles.map(file => {
+                    let cleanName = file.name.substring(0, file.name.length - 4);
+                    cleanName = cleanName.replace(/[-_]/g, ' ');
+                    
+                    let sizeMB = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
+                    
+                    return {
+                        name: cleanName,
+                        fileName: file.name,
+                        size: sizeMB,
+                        download_url: file.download_url,
+                        html_url: file.html_url
+                    };
+                });
+
+                loadingState.classList.add('hidden');
+                
+                if (allApps.length === 0) {
+                    errorState.classList.remove('hidden');
+                    document.getElementById('errorMessage').innerText = "לא נמצאו קבצי APK בתיקיה הראשית של המאגר הזה.";
+                    document.getElementById('appCountBadge').innerText = "0 אפליקציות";
+                } else {
+                    renderApps(allApps);
+                    showToast(`נטענו בהצלחה ${allApps.length} אפליקציות!`);
+                }
+
+            } catch (error) {
+                loadingState.classList.add('hidden');
+                errorState.classList.remove('hidden');
+                document.getElementById('errorMessage').innerText = error.message;
+                document.getElementById('appCountBadge').innerText = "0 אפליקציות";
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = message;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        function renderApps(apps) {
+            const grid = document.getElementById('appsGrid');
+            const emptyState = document.getElementById('emptyState');
+            const countBadge = document.getElementById('appCountBadge');
+            
+            grid.innerHTML = '';
+            countBadge.innerText = `${apps.length} אפליקציות`;
+
+            if (apps.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            apps.forEach((app, index) => {
+                const colors = [
+                    'from-amber-500 to-amber-700',
+                    'from-stone-600 to-stone-800',
+                    'from-warm-accent to-amber-600',
+                    'from-amber-700 to-stone-800',
+                    'from-yellow-600 to-amber-700'
+                ];
+                const colorClass = colors[index % colors.length];
+                const firstLetter = app.name.charAt(0) || 'A';
+
+                const card = document.createElement('div');
+                card.className = 'glass-card rounded-3xl p-5 flex flex-col justify-between custom-shadow transition-all duration-300 hover:-translate-y-1 hover:shadow-xl border border-cream-300 group';
+                
+                card.innerHTML = `
+                    <div class="flex items-start gap-4">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br ${colorClass} text-white flex items-center justify-center text-2xl font-bold shadow-md shrink-0 group-hover:scale-105 transition-transform duration-300">
+                            ${firstLetter}
+                        </div>
+                        <div class="flex flex-col flex-grow min-w-0">
+                            <h4 class="font-bold text-warm-dark text-base truncate" title="${app.name}">${app.name}</h4>
+                            <p class="text-xs text-warm-muted mt-0.5 truncate">${app.fileName || 'app.apk'}</p>
+                            <span class="inline-block mt-2 bg-cream-200 text-warm-dark text-[11px] px-2.5 py-0.5 rounded-full font-medium w-fit">
+                                <i class="fa-solid fa-file-arrow-down text-warm-accent ml-1"></i> ${app.size}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 pt-4 border-t border-cream-300 flex items-center justify-between gap-2">
+                        <a href="${app.download_url}" download class="flex-grow bg-warm-accent hover:bg-warm-accentHover text-white text-xs font-bold py-2.5 px-4 rounded-xl text-center transition-colors shadow-sm flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-download"></i> הורד APK
+                        </a>
+                        <button onclick="copyAppLink('${app.download_url}', '${app.name}')" title="העתק קישור" class="w-10 h-10 bg-cream-200 hover:bg-cream-300 text-warm-dark rounded-xl flex items-center justify-center transition-colors">
+                            <i class="fa-solid fa-link text-xs"></i>
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterApps() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const filtered = allApps.filter(app => app.name.toLowerCase().includes(query) || (app.fileName && app.fileName.toLowerCase().includes(query)));
+            renderApps(filtered);
+        }
+
+        function copyAppLink(url, appName) {
+            if (url === '#') {
+                showToast("זהו קובץ הדגמה - אין קישור הורדה זמין");
+                return;
+            }
+            const textarea = document.createElement('textarea');
+            textarea.value = url;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast(`הקישור לאפליקציה "${appName}" הועתק בהצלחה!`);
+            } catch (err) {
+                showToast("שגיאה בהעתקת הקישור");
+            }
+            document.body.removeChild(textarea);
+        }
+    </script>
+</body>
+</html>
